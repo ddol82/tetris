@@ -1,0 +1,109 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    height: 100%;
+    background: linear-gradient(135deg, #dfb0ff, #ffffff 60%);
+}
+
+#container {
+    width: 700px;
+    height: 640px;
+    margin: 40px;
+    gap: 30px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.header {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 1rem;
+}
+
+/* style.css */
+.stage {
+    margin: 0 auto;
+    outline: 2px solid white;
+}
+
+.stage > tr > td {
+    width: 25px;
+    height: 25px;
+}
+
+.side-container {
+    width: 100px;
+    height: 500px;
+    outline: 3px solid white;
+    background-color: rgba(134, 134, 134, 0.3);
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    margin-top: 60px;
+}
+
+.hold-container {
+    height: 100px;
+}
+
+.next, .hold {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: 1px solid white;
+    background-color: rgba(134, 134, 134, 0.3);
+    width: 100px;
+    height: 100px;
+}
+.next td, .hold td {
+    width: 23px;
+    height: 23px;
+    outline: 1px solid rgba(255, 255, 255, 0);
+}
+.bd-top {
+    height: 5px !important;
+    opacity: 0.5;
+}
+
+.bd-2 {
+    outline: 1px solid rgb(255, 255, 255);
+    background-color: rgba(134, 134, 134, 0.3);
+}
+.bd-1 {
+    outline: 1px solid rgb(255, 255, 255);
+    background-color: rgba(134, 134, 134, 0.5);
+}
+.t0, .bd0 {
+    outline: 1px solid rgb(255, 255, 255);
+    background-color: #9900ff;
+}
+.t1, .bd1 {
+    outline: 1px solid rgb(255, 255, 255);
+    background-color: #35bb35;
+}
+.t2, .bd2 {
+    outline: 1px solid rgb(255, 255, 255);
+    background-color: #cc2222;
+}
+.t3, .bd3 {
+    outline: 1px solid rgb(255, 255, 255);
+    background-color: #00ffff;
+}
+.t4, .bd4 {
+    outline: 1px solid rgb(255, 255, 255);
+    background-color: #ff6600;
+}
+.t5, .bd5 {
+    outline: 1px solid rgb(255, 255, 255);
+    background-color: #0000ff;
+}
+.t6, .bd6 {
+    outline: 1px solid rgb(255, 255, 255);
+    background-color: #ffee00;
+}

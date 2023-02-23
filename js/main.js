@@ -182,7 +182,7 @@ export default class Tetris {
                 resultY += 1;
                 dataY = resultY + v[0];
             }
-            if(this.blockData[dataY][dataX] !== -1) {allow = false; return;}
+            if(this.blockData[dataY][dataX] !== -1) return;
             placable = true;
         });
         if(!placable) return;

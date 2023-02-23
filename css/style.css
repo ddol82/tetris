@@ -107,3 +107,7 @@ body {
     outline: 1px solid rgb(255, 255, 255);
     background-color: #ffee00;
 }
+
+.test{
+    display: none;
+}

@@ -86,11 +86,11 @@ body {
 
 .bd-2 {
     outline: 1px solid rgb(255, 255, 255);
-    background-color: rgba(134, 134, 134, 0.3);
+    background-color: rgba(134, 134, 134, 0.15);
 }
 .bd-1 {
     outline: 1px solid rgb(255, 255, 255);
-    background-color: rgba(134, 134, 134, 0.5);
+    background-color: rgba(134, 134, 134, 0.4);
 }
 .t0, .bd0 {
     outline: 1px solid rgb(255, 255, 255);

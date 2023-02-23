@@ -21,6 +21,8 @@ export default class Tetris {
         this.currBlockLandForce = 15;
         //block - spin
         this.simulationBlock = undefined;
+        this.simulationStatus = false;
+        this.simulationSpecialStatus = false;
         this.simulationX = 0;
         this.simulationY = 0;
         //block - shadow
@@ -194,37 +196,41 @@ export default class Tetris {
     }
 
     rotate(dir) {
-        const resultBlock = this.currBlock.clone();
-        let placable = true;
+        if(this.currBlock.type === 6) return; // O
+        this.simulationStatus = false;
+        this.simulationBlock = this.currBlock.clone();
+        this.simulationX = this.currBlockX;
+        this.simulationY = this.currBlockY;
         switch(dir) {
-            case 'CW' : resultBlock.rotateCW(); break;
-            case 'CCW' : resultBlock.rotateCCW();
+            case 'CW' : this.simulationBlock.rotateCW(); break;
+            case 'CCW' : this.simulationBlock.rotateCCW();
         }
-        let resultX = this.currBlockX;
-        let resultY = this.currBlockY;
-        resultBlock.data.map(v => {
-            let dataX = resultX + v[1];
-            let dataY = resultY + v[0];
-            while(dataX < 0) {
-                resultX += 1;
-                dataX = resultX + v[1];
-            }
-            while(dataX > 9) {
-                resultX -= 1;
-                dataX = resultX + v[1];
-            }
-            while(dataY < 0) {
-                resultY += 1;
-                dataY = resultY + v[0];
-            }
-            if(this.blockData[dataY][dataX] > -1) placable = false;
-        });
-        if(!placable) return;
+        let placable = true;
+        switch(this.simulationBlock.type) {
+            case 0 : //T
+                this.checkBlockT();
+                break;
+            case 1 : //S
+                this.checkBlockS();
+                break;
+            case 2 : //Z
+                this.checkBlockZ();
+                break;
+            case 3 : //I
+                this.checkBlockI();
+                break;
+            case 4 : //J
+                this.checkBlockJ();
+                break;
+            case 5 : //L
+                this.checkBlockL();
+        }
+        if(!this.simulationStatus) return;
         this.currBlockLandCount = 500;
         if(this.currBlockLandStatus) this.currBlockLandForce -= 1;
-        this.currBlockX = resultX;
-        this.currBlockY = resultY;
-        this.currBlock = resultBlock.clone();
+        this.currBlockX = this.simulationX;
+        this.currBlockY = this.simulationY;
+        this.currBlock = this.simulationBlock.clone();
         this.landCheck();
         this.renderCurrBlock();
     }
@@ -255,6 +261,9 @@ export default class Tetris {
             return;
         }
         this.lineClearCheck();
+
+        this.simulationSpecialStatus = false;
+        this.specialScore = '';
 
         this.canHoldStatus = true;
         this.currBlockLandCount = 500;
@@ -291,30 +300,9 @@ export default class Tetris {
                 }
             }
         }
-        //B2B
-        if(erase == 4) {
-            this.backToBackChain += 1;
-            this.specialScore = (this.backToBackChain > 1 ? "B2B " : "") + 'Tetris!';
-        } else if(erase > 0) {
-            this.backToBackChain = 0;
-        }
-        //combo
-        if(erase > 0) this.comboChain += 1;
-        else this.comboChain = 0;
-        let getScore = [0, 100, 300, 500, 800][erase];
-        getScore *= this.level;
-        getScore += this.comboChain * 50 * this.level;
-        getScore *= 1 + (this.backToBackChain >= 2) * 0.5;
-        this.debugLogging('score get : ' + getScore);
-        this.score += getScore;
-        this.totalLine += erase;
-        if(this.totalLine - 40 * this.level >= 0) this.setLevel(this.level + 1);
-        document.querySelector('.line').innerHTML = `Line : ${this.totalLine}`;
-        document.querySelector('.combo').innerHTML = `Combo : ${this.comboChain}`;
-        document.querySelector('.b2b').innerHTML = `B2B x ${this.backToBackChain}`;
-        document.querySelector('.special').innerHTML = this.specialScore;
-        this.specialScore = '';
-
+        //score
+        let getScore = this.specialScore==='' ? [0, 100, 300, 500, 800][erase] : 0;
+        //line clear and drop
         let cursor = 0;
         for(let i = 0; i < this.ceiling; i++) {
             let lineEmptyStatus = true;
@@ -336,6 +324,99 @@ export default class Tetris {
                 this.blockData[cursor + i][j] = -1;
             }
         }
+        let perfectClear = true;
+        for(let i = 0; i < 10; i++) {
+            if(this.blockData[0][i] > -1) {
+                perfectClear = false;
+                break;
+            }
+        }
+        //perfect clear
+        if(perfectClear) {
+            this.specialScore = 'Perfect Clear!';
+            this.simulationSpecialStatus = true;
+            switch(erase) {
+                case 1 :
+                    getScore = 800;
+                    break;
+                case 2 :
+                    getScore = 1200;
+                    break;
+                case 3 :
+                    getScore = 1800;
+                    break;
+                case 4 :
+                    getScore = 2000 + (this.backToBackChain > 0 ? 1200 : 0);
+                    break;
+            }
+        }
+        
+        //combo
+        if(erase > 0) this.comboChain += 1;
+        else this.comboChain = 0;
+        //Tetris
+        if(erase === 4) {
+            this.specialScore = 'tetris';
+            this.simulationSpecialStatus = true;
+        }
+        //Special
+        if(this.simulationSpecialStatus) {
+            this.backToBackChain += 1;
+            //Special type
+            switch(this.specialScore) {
+                case 'tetris':
+                    this.specialScore = 'Tetris!';
+                    break;
+                case 'tspin-mini':
+                    switch(erase) {
+                        case 0:
+                            getScore = 100;
+                            this.specialScore = "T-spin Mini";
+                            break;
+                        case 1:
+                            this.specialScore = "T-spin Mini Single";
+                            break;
+                    }
+                    break;
+                case 'tspin':
+                    switch(erase) {
+                        case 0:
+                            this.specialScore = "T-spin";
+                            break;
+                        case 1:
+                            this.specialScore = "T-spin Single!";
+                            break;
+                        case 2:
+                            this.specialScore = "T-spin Double!";
+                            break;
+                        case 3:
+                            this.specialScore = "T-spin Triple!";
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+            if(this.backToBackChain > 1) {
+                this.specialScore = "B2B " + this.specialScore;
+            }
+        } else if(erase > 0) {
+            this.backToBackChain = 0;
+        }
+        getScore *= this.level;
+        if(this.specialScore !== 'clear') {
+            getScore += this.comboChain * 50 * this.level;
+            getScore *= 1 + (this.backToBackChain >= 2) * 0.5;
+        }
+        
+        this.debugLogging('score get : ' + getScore);
+        this.score += getScore;
+        this.totalLine += erase;
+        if(this.totalLine - 40 * this.level >= 0) this.setLevel(this.level + 1);
+        document.querySelector('.line').innerHTML = `Line : ${this.totalLine}`;
+        document.querySelector('.combo').innerHTML = `Combo : ${this.comboChain}`;
+        document.querySelector('.b2b').innerHTML = `B2B x ${this.backToBackChain}`;
+        document.querySelector('.special').innerHTML = this.specialScore;
     }
 
     landCheck() {
@@ -447,14 +528,24 @@ export default class Tetris {
         this.nextBlockList.data.forEach(v => {
             const next = document.querySelector(`.b${idx}`);
             const block = new Block(v);
+            let widthFrom = 3;
+            let widthTo = 1;
+            let height = 4;
+            switch(block.type) {
+                case 3 : height = 3;
+                case 6 : widthTo = 0;
+                    break;
+                case 1 : widthFrom = 2;
+                    widthTo = 0;
+            }
             const tmp = [];
             idx++;
 
             tmp.push('<table>');
             tmp.push('<tbody>');
-            for(let j = 3; j >= 2; j--) {
+            for(let j = height-1; j >= 2; j--) {
                 tmp.push('<tr>');
-                for(let k = 3; k >= 0; k--) {
+                for(let k = widthFrom; k >= widthTo; k--) {
                     tmp.push(`<td${(block.rowData&(1<<((4*j)+k))) > 0 ? (" class=t"+v) : ""}></td$>`);
                 }
                 tmp.push('</tr>');
@@ -466,16 +557,29 @@ export default class Tetris {
     }
 
     renderHoldBlock() {
-        if(this.holdBlockType === -1) return;
-        const hold = document.querySelector(`.hold`);
+        if(this.holdBlockType === -1) {
+            document.querySelector('.hold').innerHTML = '<table></table>';
+            return;
+        }
+        const hold = document.querySelector('.hold');
         const block = new Block(this.holdBlockType);
         const tmp = [];
+        let widthFrom = 3;
+        let widthTo = 1;
+        let height = 4;
+        switch(block.type) {
+            case 3 : height = 3;
+            case 6 : widthTo = 0;
+                break;
+            case 1 : widthFrom = 2;
+                widthTo = 0;
+        }
 
         tmp.push('<table>');
         tmp.push('<tbody>');
-        for(let j = 3; j >= 2; j--) {
+        for(let j = height-1; j >= 2; j--) {
             tmp.push('<tr>');
-            for(let k = 3; k >= 0; k--) {
+            for(let k = widthFrom; k >= widthTo; k--) {
                 tmp.push(`<td${(block.rowData&(1<<((4*j)+k))) > 0  ? (" class=t" + this.holdBlockType) : ""}></td$>`);
             }
             tmp.push('</tr>');
@@ -522,6 +626,154 @@ export default class Tetris {
             this.blockData[dataY][dataX] = -1;
         });
     }
+
+    simulationCrashCheck(correctionX, correctionY) {
+        let simulationCheckStatus = false;
+        this.simulationBlock.data.map(v => {
+            const dataX = this.simulationX + v[1] + correctionX;
+            const dataY = this.simulationY + v[0] + correctionY;
+            if(dataX < 0 || dataX > 9 || dataY < 0) simulationCheckStatus = true;
+            if(this.blockData[dataY][dataX] !== -1) simulationCheckStatus = true;
+        });
+        return simulationCheckStatus;
+    }
+
+    checkBlockT() {
+        //no stuck
+        if(!this.simulationCrashCheck(0, 0)) {
+            const axisX = this.simulationX+this.simulationBlock.axis[1];
+            const axisY = this.simulationY+this.simulationBlock.axis[0];
+            this.simulationStatus = true;
+            if(((this.blockData[axisY+1][axisX-1] > -1) +
+                    (this.blockData[axisY+1][axisX+1] > -1) +
+                    (this.blockData[axisY-1][axisX-1] > -1) +
+                    (this.blockData[axisY-1][axisX+1] > -1)) >= 3 &&
+                    this.currBlock.rotate !== this.simulationBlock.rotate) {
+                        this.simulationSpecialStatus = true;
+                        this.specialScore = 'tspin';
+            } else {
+                this.simulationSpecialStatus = false;
+                this.specialScore = '';
+            }
+            return;
+        }
+        //mini
+        switch(this.currBlock.rotate) {
+            case 0 :
+                let axisX = this.simulationX+this.simulationBlock.axis[1];
+                let axisY = this.simulationY+this.simulationBlock.axis[0];
+                switch(this.simulationBlock.rotate) {
+                    case 1 :
+                        if(this.blockData[axisY-1][axisX-1] === -1) {
+                            if(axisX-2 < 0 || (
+                                    this.blockData[axisY][axisX-2] > -1 &&
+                                    this.blockData[axisY-1][axisX-2] > -1)) {
+                                this.simulationX -= 1;
+                                this.simulationStatus = true;
+                                if(axisX-2 < 0 || this.blockData[axisY+1][axisX-2] > -1) {
+                                    this.simulationSpecialStatus = true;
+                                    this.specialScore = 'tspin-mini';
+                                }
+                            }
+                        } else if(this.blockData[axisY+1][axisX+1] === -1 && this.blockData[axisY+2][axisX] === -1) {
+                            this.simulationY += 1;
+                            this.simulationStatus = true;
+                        } else if(this.blockData[axisY+1][axisX-1] === -1 && this.blockData[axisY+2][axisX-1] === -1) {
+                            this.simulationX -= 1;
+                            this.simulationY += 1;
+                            this.simulationStatus = true;
+                        }
+                        break;
+                    case 3 :
+                        if(this.blockData[axisY-1][axisX+1] === -1) {
+                            if(axisX+2 > 9 || (
+                                    this.blockData[axisY][axisX+2] > -1 &&
+                                    this.blockData[axisY-1][axisX+2] > -1)) {
+                                this.simulationX += 1;
+                                this.simulationStatus = true;
+                                if(axisX+2 > 9 || this.blockData[axisY+1][axisX+2] > -1) {
+                                    this.simulationSpecialStatus = true;
+                                    this.specialScore = 'tspin-mini';
+                                }
+                            }
+                        } else if(this.blockData[axisY+1][axisX-1] === -1 && this.blockData[axisY+2][axisX] === -1) {
+                            this.simulationY += 1;
+                            this.simulationStatus = true;
+                        } else if(this.blockData[axisY+1][axisX+1] === -1 && this.blockData[axisY+2][axisX+1] === -1) {
+                            this.simulationX += 1;
+                            this.simulationY += 1;
+                            this.simulationStatus = true;
+                        }
+                        break;
+                }
+                break;
+            case 1 :
+                if(!this.simulationCrashCheck(1, 0)) {
+                    this.simulationX += 1;
+                    this.simulationStatus = true;
+                } else if(!this.simulationCrashCheck(1, -1)) {
+                    this.simulationX += 1;
+                    this.simulationY -= 1;
+                    this.simulationStatus = true;
+                    if(this.simulationBlock.rotate === 0 && (this.simulationY-2 < 0 ||
+                            this.blockData[this.simulationY+this.simulationBlock.axis[0]-2][this.simulationX+this.simulationBlock.axis[1]])) {
+                        this.simulationSpecialStatus = true;
+                        this.specialScore = 'tspin-mini';
+                    } else if(this.simulationBlock.rotate === 2 && ((this.blockData[axisY+1][axisX-1] > -1) + //수정필요!!
+                            (this.blockData[axisY+1][axisX+1] > -1) +
+                            (this.blockData[axisY-1][axisX-1] > -1) +
+                            (this.blockData[axisY-1][axisX+1] > -1)) >= 3) {
+                        this.simulationSpecialStatus = true;
+                        this.specialScore = 'tspin';
+                    }
+                }
+                break;
+            case 3 :if(!this.simulationCrashCheck(-1, 0)) {
+                    this.simulationX -= 1;
+                    this.simulationStatus = true;
+                } else if(!this.simulationCrashCheck(-1, -1)) {
+                    this.simulationX -= 1;
+                    this.simulationY -= 1;
+                    this.simulationStatus = true;
+                    if(this.simulationBlock.rotate === 0 && (this.simulationY-2 < 0 ||
+                            this.blockData[this.simulationY+this.simulationBlock.axis[0]-2][this.simulationX+this.simulationBlock.axis[1]])) {
+                        this.simulationSpecialStatus = true;
+                        this.specialScore = 'tspin-mini';
+                    }
+                }
+                break;
+        }
+
+        //triple
+        if(this.simulationY >= 3 && this.currBlock.rotate === 0) {
+            switch(this.simulationBlock.rotate) {
+                case 1:
+                    if(this.blockData[this.simulationY+this.simulationBlock.axis[0]+1][this.simulationX+this.simulationBlock.axis[1]-1] > -1) {
+                        if(!this.simulationCrashCheck(-1, -2)) {
+                            this.simulationX -= 1;
+                            this.simulationY -= 2;
+                            this.simulationStatus = true;
+                            this.simulationSpecialStatus = true;
+                            this.specialScore = 'tspin';
+                        }
+                    }
+                    break;
+                case 3:
+                    if(this.blockData[this.simulationY+this.simulationBlock.axis[0]+1][this.simulationX+this.simulationBlock.axis[1]+1] > -1) {
+                        if(!this.simulationCrashCheck(1, -2)) {
+                            this.simulationX += 1;
+                            this.simulationY -= 2;
+                            this.simulationStatus = true;
+                            this.simulationSpecialStatus = true;
+                            this.specialScore = 'tspin';
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+
+    checkBlockS
 
     setLevel(value) {
         this.level = value;

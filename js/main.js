@@ -5,33 +5,44 @@ import Controller from './controller.js'
 export default class Tetris {
     constructor() {
         //board
+        this.ceiling = 44;
         this.height = 20;
         this.width = 10;
         //block
         this.blockData = [];
         this.blockBag = [];
+        this.nextBlockList = new Queue();
+        //block - curr
         this.currBlock = undefined;
         this.currBlockX = 0;
         this.currBlockY = 0;
         this.currBlockLandStatus = false;
         this.currBlockLandCount = 500;
         this.currBlockLandForce = 15;
+        //block - shadow
         this.shadowBlock = undefined;
         this.shadowBlockY = 0;
         this.shadowBlockLandStatus = false;
-        this.nextBlockList = new Queue();
+        //block - hold
         this.holdBeforeType = -1;
         this.holdBlockType = -1;
         this.canHoldStatus = true;
+        //key
         this.keyHoldableStatus = true;
         this.keyRotatableCWStatus = true;
         this.keyRotatableCCWStatus = true;
         this.keyHardDropableStatus = true;
         //level
         this.level = 0;
+        this.totalLine = 0;
         this.speed = 1000000;
         this.remain = 1000000;
         this.progressStatus = false;
+        //score
+        this.backToBackChain = 0;
+        this.comboChain = 0;
+        this.score = 0;
+
         //controller
         this.controller = new Controller();
         //controller - movement
@@ -47,8 +58,10 @@ export default class Tetris {
             if(this.controller.keyDownCheck) {
                 this.remain = this.speed;
                 this.move('down');
+                if(!this.currBlockLandStatus) this.score += 1;
                 this.debugLogging('down');
             }
+            document.querySelector('.score').innerHTML = (this.score+'').padStart(8, '0');
         }, 66);
         //controller - toggle
         setInterval(() => {
@@ -102,11 +115,20 @@ export default class Tetris {
         this.renderBoard();
         this.initNext();
         this.initHold();
+
+        this.level = 0;
+        this.totalLine = 0;
+        this.backToBackChain = 0;
+        this.comboChain = 0;
+        this.score = 0;
+        document.querySelector('.line').innerHTML = `Line : ${this.totalLine}`;
     }
 
     start() {
         if(this.progressStatus) return;
         this.init();
+        document.querySelector('.combo').innerHTML = `Combo : ${this.comboChain}`;
+        document.querySelector('.b2b').innerHTML = `B2B x ${this.backToBackChain}`;
         this.nextBlockList = new Queue();
         this.blockBag = [];
         for(let i = 0; i < 5; i++) {
@@ -159,7 +181,7 @@ export default class Tetris {
 
     rotate(dir) {
         const resultBlock = this.currBlock.clone();
-        let placable = false;
+        let placable = true;
         switch(dir) {
             case 'CW' : resultBlock.rotateCW(); break;
             case 'CCW' : resultBlock.rotateCCW();
@@ -182,8 +204,7 @@ export default class Tetris {
                 resultY += 1;
                 dataY = resultY + v[0];
             }
-            if(this.blockData[dataY][dataX] !== -1) return;
-            placable = true;
+            if(this.blockData[dataY][dataX] > -1) placable = false;
         });
         if(!placable) return;
         this.currBlockLandCount = 500;
@@ -208,11 +229,14 @@ export default class Tetris {
     drop() {
         this.landCheck();
         if(!this.currBlockLandStatus) return;
+
         this.currBlock.data.map(v => {
             const dataX = this.currBlockX + v[1];
             const dataY = this.currBlockY + v[0];
             this.blockData[dataY][dataX] = this.currBlock.type;
         });
+        this.lineClearCheck();
+
         this.canHoldStatus = true;
         this.currBlockLandCount = 500;
         this.currBlockLandForce = 15;
@@ -224,6 +248,7 @@ export default class Tetris {
     hardDrop() {
         this.landCheck();
         while(!this.currBlockLandStatus) {
+            this.score += 2;
             this.currBlockY -= 1;
             this.landCheck();
         }
@@ -233,6 +258,64 @@ export default class Tetris {
     gameOver() {
         this.progressStatus = false;
         this.remain = 10000000;
+    }
+
+    lineClearCheck() {
+        let erase = 0;
+        for(let i = 0; i < this.ceiling; i++) {
+            let lineFullStatus = true;
+            for(let j = 0; j < 10; j++) {
+                if(this.blockData[i][j] === -1) {
+                    lineFullStatus = false;
+                    break;
+                }
+            }
+            if(lineFullStatus) {
+                erase += 1;
+                for(let j = 0; j < 10; j++) {
+                    this.blockData[i][j] = -1;
+                }
+            }
+        }
+        //B2B
+        if(erase == 4) this.backToBackChain += 1;
+        else if(erase > 0) this.backToBackChain = 0;
+        //combo
+        if(erase > 0) this.comboChain += 1;
+        else this.comboChain = 0;
+        let getScore = [0, 100, 300, 500, 800][erase];
+        getScore *= this.level;
+        getScore += this.comboChain * 50 * this.level;
+        getScore *= 1 + (this.backToBackChain >= 2) * 0.5;
+        this.debugLogging('score get : ' + getScore);
+        this.score += getScore;
+        this.totalLine += erase;
+        if(this.totalLine - 0 * this.level >= 0) this.setLevel(this.level + 1);
+        document.querySelector('.line').innerHTML = `Line : ${this.totalLine}`;
+        document.querySelector('.combo').innerHTML = `Combo : ${this.comboChain}`;
+        document.querySelector('.b2b').innerHTML = `B2B x ${this.backToBackChain}`;
+
+        let cursor = 0;
+        for(let i = 0; i < this.ceiling; i++) {
+            let lineEmptyStatus = true;
+            for(let j = 0; j < 10; j++) {
+                if(this.blockData[i][j] > -1) {
+                    lineEmptyStatus = false;
+                    break;
+                }
+            }
+            if(cursor < i) {
+                for(let j = 0; j < 10; j++) {
+                    this.blockData[cursor][j] = this.blockData[i][j];
+                }
+            }
+            if(!lineEmptyStatus) cursor += 1;
+        }
+        for(let i = 0; i < 4; i++) {
+            for(let j = 0; j < 10; j++) {
+                this.blockData[cursor + i][j] = -1;
+            }
+        }
     }
 
     landCheck() {
@@ -290,7 +373,7 @@ export default class Tetris {
     }
 
     initBlockData() {
-        this.blockData = [...Array(23)].map(_=>[...Array(10)].map(v=>-1));
+        this.blockData = [...Array(this.ceiling)].map(_=>[...Array(10)].map(v=>-1));
     }
 
     initNext() {
@@ -304,8 +387,6 @@ export default class Tetris {
     }
 
     initHold() {
-        const next = document.querySelector('.hold-container');
-        next.innerHTML = '<div class="hold"></div>';
         this.holdBlockType = -1;
         this.canHoldStatus = true;
         this.renderHoldBlock();
@@ -368,7 +449,6 @@ export default class Tetris {
         if(this.holdBlockType === -1) return;
         const hold = document.querySelector(`.hold`);
         const block = new Block(this.holdBlockType);
-        this.debugLogging(block);
         const tmp = [];
 
         tmp.push('<table>');
@@ -425,7 +505,9 @@ export default class Tetris {
 
     setLevel(value) {
         this.level = value;
-        this.speed = Math.max(1000 - (this.level - 1) * 50, 50);
+        this.speed = Math.max(1000 - (this.level - 1) * 100, 30);
+
+        document.querySelector('.level').innerHTML = `Level : ${this.level}`;
     }
 
     debugLogging(msg) {

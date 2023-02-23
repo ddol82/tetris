@@ -27,6 +27,19 @@ body {
 }
 
 /* style.css */
+.finish {
+    display: none;
+}
+.finish-show {
+    position: absolute;
+    width: 267px;
+    padding-top: 200px;
+    height: 340px;
+    text-align: center;
+    font-size: 60px;
+    background-color: #00000040;
+}
+
 .stage {
     margin: 0 auto;
     outline: 2px solid white;

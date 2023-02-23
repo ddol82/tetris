@@ -19,6 +19,10 @@ export default class Tetris {
         this.currBlockLandStatus = false;
         this.currBlockLandCount = 500;
         this.currBlockLandForce = 15;
+        //block - spin
+        this.simulationBlock = undefined;
+        this.simulationX = 0;
+        this.simulationY = 0;
         //block - shadow
         this.shadowBlock = undefined;
         this.shadowBlockY = 0;
@@ -39,6 +43,7 @@ export default class Tetris {
         this.remain = 1000000;
         this.progressStatus = false;
         //score
+        this.specialScore = '';
         this.backToBackChain = 0;
         this.comboChain = 0;
         this.score = 0;
@@ -127,6 +132,8 @@ export default class Tetris {
     start() {
         if(this.progressStatus) return;
         this.init();
+        if(document.querySelector('.finish-show') !== null)
+            document.querySelector('.finish-show').className = 'finish';
         document.querySelector('.combo').innerHTML = `Combo : ${this.comboChain}`;
         document.querySelector('.b2b').innerHTML = `B2B x ${this.backToBackChain}`;
         this.nextBlockList = new Queue();
@@ -139,6 +146,13 @@ export default class Tetris {
         this.remain = this.speed;
         this.pollBlock(0, false);
         this.move('');
+    }
+
+    gameOver() {
+        if(document.querySelector('.finish') !== null)
+            document.querySelector('.finish').className = 'finish-show';
+        this.progressStatus = false;
+        this.remain = 10000000;
     }
 
     move(dir) {
@@ -188,7 +202,6 @@ export default class Tetris {
         }
         let resultX = this.currBlockX;
         let resultY = this.currBlockY;
-        console.log(resultBlock);
         resultBlock.data.map(v => {
             let dataX = resultX + v[1];
             let dataY = resultY + v[0];
@@ -230,11 +243,17 @@ export default class Tetris {
         this.landCheck();
         if(!this.currBlockLandStatus) return;
 
+        let tooHighStatus = true;
         this.currBlock.data.map(v => {
             const dataX = this.currBlockX + v[1];
             const dataY = this.currBlockY + v[0];
+            if(dataY < 20) tooHighStatus = false;
             this.blockData[dataY][dataX] = this.currBlock.type;
         });
+        if(tooHighStatus) {
+            this.gameOver();
+            return;
+        }
         this.lineClearCheck();
 
         this.canHoldStatus = true;
@@ -255,11 +274,6 @@ export default class Tetris {
         this.drop();
     }
 
-    gameOver() {
-        this.progressStatus = false;
-        this.remain = 10000000;
-    }
-
     lineClearCheck() {
         let erase = 0;
         for(let i = 0; i < this.ceiling; i++) {
@@ -278,8 +292,12 @@ export default class Tetris {
             }
         }
         //B2B
-        if(erase == 4) this.backToBackChain += 1;
-        else if(erase > 0) this.backToBackChain = 0;
+        if(erase == 4) {
+            this.backToBackChain += 1;
+            this.specialScore = (this.backToBackChain > 1 ? "B2B " : "") + 'Tetris!';
+        } else if(erase > 0) {
+            this.backToBackChain = 0;
+        }
         //combo
         if(erase > 0) this.comboChain += 1;
         else this.comboChain = 0;
@@ -290,10 +308,12 @@ export default class Tetris {
         this.debugLogging('score get : ' + getScore);
         this.score += getScore;
         this.totalLine += erase;
-        if(this.totalLine - 0 * this.level >= 0) this.setLevel(this.level + 1);
+        if(this.totalLine - 40 * this.level >= 0) this.setLevel(this.level + 1);
         document.querySelector('.line').innerHTML = `Line : ${this.totalLine}`;
         document.querySelector('.combo').innerHTML = `Combo : ${this.comboChain}`;
         document.querySelector('.b2b').innerHTML = `B2B x ${this.backToBackChain}`;
+        document.querySelector('.special').innerHTML = this.specialScore;
+        this.specialScore = '';
 
         let cursor = 0;
         for(let i = 0; i < this.ceiling; i++) {

@@ -632,17 +632,23 @@ export default class Tetris {
         this.simulationBlock.data.map(v => {
             const dataX = this.simulationX + v[1] + correctionX;
             const dataY = this.simulationY + v[0] + correctionY;
-            if(dataX < 0 || dataX > 9 || dataY < 0) simulationCheckStatus = true;
-            if(this.blockData[dataY][dataX] !== -1) simulationCheckStatus = true;
+            if(dataX < 0 || dataX > 9 || dataY < 0) {simulationCheckStatus = true; return;}
+            if(this.blockData[dataY][dataX] !== -1) {simulationCheckStatus = true; return;}
         });
         return simulationCheckStatus;
     }
 
+    simulationPossible(axisX, axisY) {
+        this.simulationX += axisX;
+        this.simulationY += axisY;
+        this.simulationStatus = true;
+    }
+
     checkBlockT() {
+        let axisX = this.simulationX+this.simulationBlock.axis[1];
+        let axisY = this.simulationY+this.simulationBlock.axis[0];
         //no stuck
         if(!this.simulationCrashCheck(0, 0)) {
-            const axisX = this.simulationX+this.simulationBlock.axis[1];
-            const axisY = this.simulationY+this.simulationBlock.axis[0];
             this.simulationStatus = true;
             if(((this.blockData[axisY+1][axisX-1] > -1) +
                     (this.blockData[axisY+1][axisX+1] > -1) +
@@ -657,102 +663,13 @@ export default class Tetris {
             }
             return;
         }
-        //mini
-        switch(this.currBlock.rotate) {
-            case 0 :
-                let axisX = this.simulationX+this.simulationBlock.axis[1];
-                let axisY = this.simulationY+this.simulationBlock.axis[0];
-                switch(this.simulationBlock.rotate) {
-                    case 1 :
-                        if(this.blockData[axisY-1][axisX-1] === -1) {
-                            if(axisX-2 < 0 || (
-                                    this.blockData[axisY][axisX-2] > -1 &&
-                                    this.blockData[axisY-1][axisX-2] > -1)) {
-                                this.simulationX -= 1;
-                                this.simulationStatus = true;
-                                if(axisX-2 < 0 || this.blockData[axisY+1][axisX-2] > -1) {
-                                    this.simulationSpecialStatus = true;
-                                    this.specialScore = 'tspin-mini';
-                                }
-                            }
-                        } else if(this.blockData[axisY+1][axisX+1] === -1 && this.blockData[axisY+2][axisX] === -1) {
-                            this.simulationY += 1;
-                            this.simulationStatus = true;
-                        } else if(this.blockData[axisY+1][axisX-1] === -1 && this.blockData[axisY+2][axisX-1] === -1) {
-                            this.simulationX -= 1;
-                            this.simulationY += 1;
-                            this.simulationStatus = true;
-                        }
-                        break;
-                    case 3 :
-                        if(this.blockData[axisY-1][axisX+1] === -1) {
-                            if(axisX+2 > 9 || (
-                                    this.blockData[axisY][axisX+2] > -1 &&
-                                    this.blockData[axisY-1][axisX+2] > -1)) {
-                                this.simulationX += 1;
-                                this.simulationStatus = true;
-                                if(axisX+2 > 9 || this.blockData[axisY+1][axisX+2] > -1) {
-                                    this.simulationSpecialStatus = true;
-                                    this.specialScore = 'tspin-mini';
-                                }
-                            }
-                        } else if(this.blockData[axisY+1][axisX-1] === -1 && this.blockData[axisY+2][axisX] === -1) {
-                            this.simulationY += 1;
-                            this.simulationStatus = true;
-                        } else if(this.blockData[axisY+1][axisX+1] === -1 && this.blockData[axisY+2][axisX+1] === -1) {
-                            this.simulationX += 1;
-                            this.simulationY += 1;
-                            this.simulationStatus = true;
-                        }
-                        break;
-                }
-                break;
-            case 1 :
-                if(!this.simulationCrashCheck(1, 0)) {
-                    this.simulationX += 1;
-                    this.simulationStatus = true;
-                } else if(!this.simulationCrashCheck(1, -1)) {
-                    this.simulationX += 1;
-                    this.simulationY -= 1;
-                    this.simulationStatus = true;
-                    if(this.simulationBlock.rotate === 0 && (this.simulationY-2 < 0 ||
-                            this.blockData[this.simulationY+this.simulationBlock.axis[0]-2][this.simulationX+this.simulationBlock.axis[1]])) {
-                        this.simulationSpecialStatus = true;
-                        this.specialScore = 'tspin-mini';
-                    } else if(this.simulationBlock.rotate === 2 && ((this.blockData[axisY+1][axisX-1] > -1) + //수정필요!!
-                            (this.blockData[axisY+1][axisX+1] > -1) +
-                            (this.blockData[axisY-1][axisX-1] > -1) +
-                            (this.blockData[axisY-1][axisX+1] > -1)) >= 3) {
-                        this.simulationSpecialStatus = true;
-                        this.specialScore = 'tspin';
-                    }
-                }
-                break;
-            case 3 :if(!this.simulationCrashCheck(-1, 0)) {
-                    this.simulationX -= 1;
-                    this.simulationStatus = true;
-                } else if(!this.simulationCrashCheck(-1, -1)) {
-                    this.simulationX -= 1;
-                    this.simulationY -= 1;
-                    this.simulationStatus = true;
-                    if(this.simulationBlock.rotate === 0 && (this.simulationY-2 < 0 ||
-                            this.blockData[this.simulationY+this.simulationBlock.axis[0]-2][this.simulationX+this.simulationBlock.axis[1]])) {
-                        this.simulationSpecialStatus = true;
-                        this.specialScore = 'tspin-mini';
-                    }
-                }
-                break;
-        }
-
         //triple
-        if(this.simulationY >= 3 && this.currBlock.rotate === 0) {
+        if(this.currBlock.rotate === 0) {
             switch(this.simulationBlock.rotate) {
                 case 1:
-                    if(this.blockData[this.simulationY+this.simulationBlock.axis[0]+1][this.simulationX+this.simulationBlock.axis[1]-1] > -1) {
+                    if(this.blockData[axisY+1][axisX-1] > -1) {
                         if(!this.simulationCrashCheck(-1, -2)) {
-                            this.simulationX -= 1;
-                            this.simulationY -= 2;
-                            this.simulationStatus = true;
+                            this.simulationPossible(-1, -2);
                             this.simulationSpecialStatus = true;
                             this.specialScore = 'tspin';
                         }
@@ -761,9 +678,7 @@ export default class Tetris {
                 case 3:
                     if(this.blockData[this.simulationY+this.simulationBlock.axis[0]+1][this.simulationX+this.simulationBlock.axis[1]+1] > -1) {
                         if(!this.simulationCrashCheck(1, -2)) {
-                            this.simulationX += 1;
-                            this.simulationY -= 2;
-                            this.simulationStatus = true;
+                            this.simulationPossible(1, -2);
                             this.simulationSpecialStatus = true;
                             this.specialScore = 'tspin';
                         }
@@ -771,9 +686,432 @@ export default class Tetris {
                     break;
             }
         }
+        //mini
+        switch(this.currBlock.rotate) {
+            case 0 :
+                if(!this.simulationCrashCheck(0, 1)) {
+                    this.simulationPossible(0, 1);
+                    break;
+                }
+                switch(this.simulationBlock.rotate) {
+                    case 1 :
+                        if(axisY-1 >= 0 && 
+                                this.blockData[axisY-1][axisX-1] === -1) {
+                            if(axisX-2 < 0 || (
+                                    this.blockData[axisY][axisX-2] > -1 &&
+                                    this.blockData[axisY-1][axisX] > -1) &&
+                                    !this.simulationCrashCheck(-1, 0)) {
+                                this.simulationPossible(-1, 0);
+                                if(axisX-2 < 0 || this.blockData[axisY+1][axisX-2] > -1) {
+                                    this.simulationSpecialStatus = true;
+                                    this.specialScore = 'tspin-mini';
+                                }
+                            }
+                            break;
+                        }
+                        if(this.blockData[axisY+1][axisX+1] > -1 &&
+                                !this.simulationCrashCheck(-1, 1)) {
+                            this.simulationPossible(-1, 1);
+                        }
+                        break;
+                    case 3 :
+                        if(axisY-1 >= 0 && 
+                                this.blockData[axisY-1][axisX+1] === -1) {
+                            if(axisX+2 > 9 || (
+                                    this.blockData[axisY][axisX+2] > -1 &&
+                                    this.blockData[axisY-1][axisX] > -1) &&
+                                    !this.simulationCrashCheck(1, 0)) {
+                                this.simulationPossible(1, 0);
+                                if(axisX+2 > 9 || this.blockData[axisY+1][axisX+2] > -1) {
+                                    this.simulationSpecialStatus = true;
+                                    this.specialScore = 'tspin-mini';
+                                }
+                            }
+                            break;
+                        }
+                        if(this.blockData[axisY+1][axisX-1] > -1 &&
+                                !this.simulationCrashCheck(1, 1)) {
+                            this.simulationPossible(1, 1);
+                        }
+                }
+            case 1 :
+                if(!this.simulationCrashCheck(1, 0)) {
+                    this.simulationPossible(1, 0);
+                } else if(!this.simulationCrashCheck(1, -1)) {
+                    this.simulationPossible(1, -1);
+                    if(this.simulationBlock.rotate === 0 && (this.simulationY-2 < 0 ||
+                            this.blockData[this.simulationY+this.simulationBlock.axis[0]-2][this.simulationX+this.simulationBlock.axis[1]])) {
+                        this.simulationSpecialStatus = true;
+                        this.specialScore = 'tspin-mini';
+                    } else if(this.simulationBlock.rotate === 2 && 
+                            this.simulationCrashCheck(1, -1) &&
+                            ((this.blockData[axisY+1-1][axisX-1+1] > -1) + //수정필요!!
+                            (this.blockData[axisY+1-1][axisX+1+1] > -1) +
+                            (this.blockData[axisY-1-1][axisX-1+1] > -1) +
+                            (this.blockData[axisY-1-1][axisX+1+1] > -1)) >= 3) {
+                        this.simulationSpecialStatus = true;
+                        this.specialScore = 'tspin';
+                    }
+                }
+                break;
+            case 3 :
+                if(!this.simulationCrashCheck(-1, 0)) {
+                    this.simulationPossible(-1, 0);
+                } else if(!this.simulationCrashCheck(-1, -1)) {
+                    this.simulationPossible(-1, -1);
+                    if(this.simulationBlock.rotate === 0 && (this.simulationY-2 < 0 ||
+                            this.blockData[this.simulationY+this.simulationBlock.axis[0]-2][this.simulationX+this.simulationBlock.axis[1]])) {
+                        this.simulationSpecialStatus = true;
+                        this.specialScore = 'tspin-mini';
+                    } else if(this.simulationBlock.rotate === 2 && 
+                        this.simulationCrashCheck(-1, -1) &&
+                        ((this.blockData[axisY+1-1][axisX-1-1] > -1) +
+                        (this.blockData[axisY+1-1][axisX+1-1] > -1) +
+                        (this.blockData[axisY-1-1][axisX-1-1] > -1) +
+                        (this.blockData[axisY-1-1][axisX+1-1] > -1)) >= 3) {
+                    this.simulationSpecialStatus = true;
+                    this.specialScore = 'tspin';
+                    }
+                }
+                break;
+        }
     }
 
-    checkBlockS
+    checkBlockS() {
+        let axisX = this.currBlockX+this.currBlock.axis[1];
+        let axisY = this.currBlockY+this.currBlock.axis[0];
+        if(this.currBlock.rotate === 0 &&
+                this.simulationBlock.rotate === 3 &&
+                this.blockData[axisY][axisX+1] > -1 &&
+                !this.simulationCrashCheck(0, -2)) {
+            this.simulationPossible(0, -2);
+            return;
+        }
+        if(!this.simulationCrashCheck(0, 0)) {
+            this.simulationPossible(0, 0);
+            return;
+        }
+        switch(this.currBlock.rotate) {
+            case 0:
+                if(this.simulationBlock.rotate === 1 &&
+                        (this.blockData[axisY+1][axisX-1] > -1 ||
+                        this.blockData[axisY+2][axisX-1] > -1)) {
+                    if(!this.simulationCrashCheck(-1, -2)) {
+                        this.simulationPossible(-1, -2);
+                        break;
+                    }
+                    if(!this.simulationCrashCheck(0, -2)) {
+                        this.simulationPossible(0, -2);
+                        break;
+                    }
+                    break;
+                }
+                if(!this.simulationCrashCheck(0, 1)) {
+                    this.simulationPossible(0, 1);
+                    break;
+                }
+                break;
+            case 1:
+                if(this.simulationBlock.rotate === 2 &&
+                        !this.simulationCrashCheck(1, -1) &&
+                        this.blockData[axisY-1][axisX] > -1) {
+                    this.simulationPossible(1, -1);
+                    break;
+                }
+                if(!this.simulationCrashCheck(1, 0)) {
+                    this.simulationPossible(1, 0);
+                    break;
+                }
+                if(this.simulationBlock.rotate === 0 &&
+                        !this.simulationCrashCheck(1, -1)) {
+                    this.simulationPossible(0, -1);
+                    break;
+                }
+                if(this.simulationBlock.rotate === 0 &&
+                        !this.simulationCrashCheck(1, 2)) {
+                    this.simulationPossible(1, 2);
+                    break;
+                }
+                if(this.simulationBlock.rotate === 0 &&
+                        this.blockData[axisY+1][axisX+1] > -1 &&
+                        !this.simulationCrashCheck(1, 2)) {
+                    this.simulationPossible(1, 2);
+                    break;
+                }
+                break;
+            case 3:
+                if(this.simulationBlock.rotate === 2 &&
+                        (axisX + 1 > 9 || this.blockData[axisY][axisX+1] > -1) &&
+                        !this.simulationCrashCheck(-1, -1)) {
+                    this.simulationPossible(-1, -1);
+                    break;
+                }
+                if(this.simulationBlock.rotate === 0 &&
+                        !this.simulationCrashCheck(-1, -1)) {
+                    this.simulationPossible(-1, -1);
+                    break;
+                }
+                if(!this.simulationCrashCheck(-1, 0)) {
+                    this.simulationPossible(-1, 0);
+                    break;
+                }
+                if(this.simulationBlock.rotate === 0 &&
+                        this.blockData[axisY+1][axisX] > -1 &&
+                        !this.simulationCrashCheck(0, 2)) {
+                    this.simulationPossible(0, 2);
+                    break;
+                }
+        }
+    }
+    
+    checkBlockZ() {
+        let axisX = this.currBlockX+this.currBlock.axis[1];
+        let axisY = this.currBlockY+this.currBlock.axis[0];
+        if(this.currBlock.rotate === 0 &&
+                this.simulationBlock.rotate === 1 &&
+                this.blockData[axisY][axisX-1] > -1 &&
+                !this.simulationCrashCheck(0, -2)) {
+            this.simulationPossible(0, -2);
+        }
+        if(!this.simulationCrashCheck(0, 0)) {
+            this.simulationPossible(0, 0);
+            return;
+        }
+        switch(this.currBlock.rotate) {
+            case 0:
+                if(this.simulationBlock.rotate === 3 &&
+                        (this.blockData[axisY+1][axisX+1] > -1 ||
+                        this.blockData[axisY+2][axisX+1] > -1)) {
+                    if(!this.simulationCrashCheck(1, -2)) {
+                        this.simulationPossible(1, -2);
+                        break;
+                    }
+                    if(!this.simulationCrashCheck(0, -2)) {
+                        this.simulationPossible(0, -2);
+                        break;
+                    }
+                    break;
+                }
+                if(!this.simulationCrashCheck(0, 1)) {
+                    this.simulationPossible(0, 1);
+                    break;
+                }
+                break;
+            case 3:
+                if(this.simulationBlock.rotate === 2 &&
+                        !this.simulationCrashCheck(-1, -1) &&
+                        this.blockData[axisY-1][axisX] > -1) {
+                    this.simulationPossible(-1, -1);
+                    break;
+                }
+                if(this.simulationBlock.rotate === 0 &&
+                        !this.simulationCrashCheck(0, -1)) {
+                    this.simulationPossible(0, -1);
+                    break;
+                }
+                if(!this.simulationCrashCheck(1, 0)) {
+                    this.simulationPossible(1, 0);
+                    break;
+                }
+                if(this.simulationBlock.rotate === 0 &&
+                        !this.simulationCrashCheck(0, 2)) {
+                    this.simulationPossible(0, 2);
+                    break;
+                }
+                if(this.simulationBlock.rotate === 0 &&
+                        !this.simulationCrashCheck(-1, 2)) {
+                    this.simulationPossible(-1, 2);
+                    break;
+                }
+                break;
+            case 1:
+                if(this.simulationBlock.rotate === 2 &&
+                        (axisX + 2 > 9 || this.blockData[axisY][axisX+2]) &&
+                        !this.simulationCrashCheck(1, -1)) {
+                    this.simulationPossible(1, -1);
+                    break;
+                }
+                if(this.simulationBlock.rotate === 0 &&
+                        !this.simulationCrashCheck(-1, -1)) {
+                    this.simulationPossible(-1, -1);
+                    break;
+                }
+                if(!this.simulationCrashCheck(-1, 0)) {
+                    this.simulationPossible(-1, 0);
+                    break;
+                }
+                if(this.simulationBlock.rotate === 0 &&
+                        !this.simulationCrashCheck(0, 2)) {
+                    this.simulationPossible(0, 2);
+                    break;
+                }
+        }
+    }
+
+    checkBlockI() {
+        if(!this.simulationCrashCheck(0, 0)) {
+            this.simulationPossible(0, 0);
+            return;
+        }
+        let axisX = this.currBlockX+this.currBlock.axis[1];
+        let axisY = this.currBlockY+this.currBlock.axis[0];
+        switch(this.currBlock.rotate) {
+            case 0: case 2:
+                if(!this.simulationCrashCheck(0, 1)) {
+                    this.simulationPossible(0, 1);
+                    break;
+                }
+                if(!this.simulationCrashCheck(0, 2)) {
+                    this.simulationPossible(0, 1);
+                    break;
+                }
+                break;
+            case 1:
+                if(!this.simulationCrashCheck(1, 0)) {
+                    this.simulationPossible(0, 1);
+                    break;
+                }
+                if(!this.simulationCrashCheck(2, 0)) {
+                    this.simulationPossible(0, 2);
+                    break;
+                }
+                if(!this.simulationCrashCheck(-1, 0)) {
+                    this.simulationPossible(-1, 0);
+                    break;
+                }
+                break;
+            case 3:
+                if(!this.simulationCrashCheck(-1, 0)) {
+                    this.simulationPossible(-1, 0);
+                    break;
+                }
+                if(!this.simulationCrashCheck(-2, 0)) {
+                    this.simulationPossible(-2, 0);
+                    break;
+                }
+                if(!this.simulationCrashCheck(1, 0)) {
+                    this.simulationPossible(1, 0);
+                    break;
+                }
+        }
+    }
+
+    checkBlockJ() {
+        if(!this.simulationCrashCheck(0, 0)) {
+            this.simulationStatus = true;
+            return;
+        }
+        let axisX = this.currBlockX+this.currBlock.axis[1];
+        let axisY = this.currBlockY+this.currBlock.axis[0];
+        switch(this.currBlock.rotate) {
+            case 0:
+                if(this.simulationBlock.rotate === 1 &&
+                        this.blockData[axisY+1][axisX] > -1 &&
+                        !this.simulationCrashCheck(-1, 1)) {
+                    this.simulationPossible(-1, 1);
+                    break;
+                }
+                if(this.simulationBlock.rotate === 3 &&
+                        this.blockData[axisY+1][axisX] > -1 &&
+                        !this.simulationCrashCheck(1, 1)) {
+                    this.simulationPossible(1, 1);
+                    break;
+                }
+                if(!this.simulationCrashCheck(0, 1)) {
+                    this.simulationPossible(0, 1);
+                }
+                break;
+            case 1:
+                if(this.simulationBlock.rotate === 2 &&
+                        this.blockData[axisY][axisX+1] > -1 &&
+                        !this.simulationCrashCheck(1, 1)) {
+                    this.simulationPossible(1, 1);
+                    break;
+                }
+                if(this.simulationBlock.rotate === 0 &&
+                        this.blockData[axisY][axisX+1] > -1 &&
+                        !this.simulationCrashCheck(1, -1)) {
+                    this.simulationPossible(1, -1);
+                    break;
+                }
+                if(!this.simulationCrashCheck(1, 0)) {
+                    this.simulationPossible(1, 0);
+                    break;
+                }
+                break;
+            case 2:
+                if(this.simulationBlock.rotate === 3 &&
+                        this.blockData[axisY-1][axisX] > -1 &&
+                        !this.simulationCrashCheck(1, -1)) {
+                    this.simulationPossible(1, -1);
+                    break;
+                }
+                if(this.simulationBlock.rotate === 1 &&
+                        this.blockData[axisY-1][axisX] > -1 &&
+                        !this.simulationCrashCheck(-1, -1)) {
+                    this.simulationPossible(-1, -1);
+                    break;
+                }
+                break;
+            case 3:
+                if(this.simulationBlock.rotate === 0 &&
+                        this.blockData[axisY][axisX-1] > -1 &&
+                        !this.simulationCrashCheck(-1, -1)) {
+                    this.simulationPossible(-1, -1);
+                    break;
+                }
+                if(this.simulationBlock.rotate === 2 &&
+                        this.blockData[axisY][axisX-1] > -1 &&
+                        !this.simulationCrashCheck(-1, 1)) {
+                    this.simulationPossible(-1, 1);
+                    break;
+                }
+                this.debugLogging(`${this.blockData[axisY][axisX+1]}, ${this.blockData[axisY][axisX-1]}, ${(this.blockData[axisY][axisX+1]) > -1 ^ (this.blockData[axisY][axisX-1] > -1)}`);
+                this.debugLogging(this.simulationCrashCheck(-1, -1));
+                if(this.simulationBlock.rotate === 2 &&
+                        ((this.blockData[axisY][axisX+1]) > -1 ^
+                        (this.blockData[axisY][axisX-1] > -1)) &&
+                        !this.simulationCrashCheck(-1, -1)) {
+                            this.debugLogging('dddddddddddddddddddddd');
+                    this.simulationPossible(-1, -1);
+                }
+                if(!this.simulationCrashCheck(-1, 0)) {
+                    this.simulationPossible(-1, 0);
+                    break;
+                }
+        }
+    }
+
+    checkBlockL() {
+        if(!this.simulationCrashCheck(0, 0)) {
+            this.simulationStatus = true;
+            return;
+        }
+        let axisX = this.currBlockX+this.currBlock.axis[1];
+        let axisY = this.currBlockY+this.currBlock.axis[0];
+        switch(this.currBlock.rotate) {
+            case 0:
+                if(!this.simulationCrashCheck(0, 1)) {
+                    this.simulationY += 1;
+                    this.simulationStatus = true;
+                    break;
+                }
+                break;
+            case 1:
+                if(!this.simulationCrashCheck(1, 0)) {
+                    this.simulationX += 1;
+                    this.simulationStatus = true;
+                    break;
+                }
+                break;
+            case 3:
+                if(!this.simulationCrashCheck(-1, 0)) {
+                    this.simulationX -= 1;
+                    this.simulationStatus = true;
+                    break;
+                }
+        }
+    }
 
     setLevel(value) {
         this.level = value;

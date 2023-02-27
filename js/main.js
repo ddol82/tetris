@@ -737,13 +737,17 @@ export default class Tetris {
             case 1 :
                 if(!this.simulationCrashCheck(1, 0)) {
                     this.simulationPossible(1, 0);
-                } else if(!this.simulationCrashCheck(1, -1)) {
+                    break;
+                }
+                if(!this.simulationCrashCheck(1, -1)) {
                     this.simulationPossible(1, -1);
-                    if(this.simulationBlock.rotate === 0 && (this.simulationY-2 < 0 ||
-                            this.blockData[this.simulationY+this.simulationBlock.axis[0]-2][this.simulationX+this.simulationBlock.axis[1]])) {
+                    if(this.simulationBlock.rotate === 0 && (axisY-2 < 0 ||
+                            this.blockData[axisY-2][axisX])) {
                         this.simulationSpecialStatus = true;
                         this.specialScore = 'tspin-mini';
-                    } else if(this.simulationBlock.rotate === 2 && 
+                        break;
+                    }
+                    if(this.simulationBlock.rotate === 2 && 
                             this.simulationCrashCheck(1, -1) &&
                             ((this.blockData[axisY+1-1][axisX-1+1] > -1) + //수정필요!!
                             (this.blockData[axisY+1-1][axisX+1+1] > -1) +
@@ -754,6 +758,14 @@ export default class Tetris {
                     }
                 }
                 break;
+            case 2 :
+                if(!this.simulationCrashCheck(-1, -1)) {
+                    this.simulationPossible(-1, -1);
+                    break;
+                }
+                if(!this.simulationCrashCheck(1, -1)) {
+                    this.simulationPossible(1, -1);
+                }
             case 3 :
                 if(!this.simulationCrashCheck(-1, 0)) {
                     this.simulationPossible(-1, 0);
@@ -1022,11 +1034,15 @@ export default class Tetris {
                 }
                 break;
             case 1:
-                if(this.simulationBlock.rotate === 2 &&
-                        this.blockData[axisY][axisX+1] > -1 &&
-                        !this.simulationCrashCheck(1, 1)) {
-                    this.simulationPossible(1, 1);
-                    break;
+                if(this.simulationBlock.rotate === 2) {
+                    if(this.blockData[axisY][axisX+1] > -1 &&
+                            !this.simulationCrashCheck(1, 1)) {
+                        this.simulationPossible(1, 1);
+                        break;
+                    }
+                    if(axisX-1 < 0 && !this.simulationCrashCheck(1, 0)) {
+                        this.simulationPossible(1, 0);
+                    }
                 }
                 if(this.simulationBlock.rotate === 0 &&
                         this.blockData[axisY][axisX+1] > -1 &&
@@ -1054,30 +1070,42 @@ export default class Tetris {
                 }
                 break;
             case 3:
-                if(this.simulationBlock.rotate === 0 &&
-                        this.blockData[axisY][axisX-1] > -1 &&
-                        !this.simulationCrashCheck(-1, -1)) {
-                    this.simulationPossible(-1, -1);
-                    break;
+                if(this.simulationBlock.rotate === 0) {
+                    if(!this.simulationCrashCheck(-1, -1) &&
+                            (this.blockData[axisY][axisX-1] > -1 ||
+                            axisX+1 > 9 ||
+                            this.blockData[axisY][axisX+1] > -1)
+                            ) {
+                        this.simulationPossible(-1, -1);
+                        break;
+                    } 
+                    if(!this.simulationCrashCheck(-1, 0)) {
+                        this.simulationPossible(-1, 0);
+                        break;
+                    }
                 }
-                if(this.simulationBlock.rotate === 2 &&
-                        this.blockData[axisY][axisX-1] > -1 &&
-                        !this.simulationCrashCheck(-1, 1)) {
-                    this.simulationPossible(-1, 1);
-                    break;
-                }
-                this.debugLogging(`${this.blockData[axisY][axisX+1]}, ${this.blockData[axisY][axisX-1]}, ${(this.blockData[axisY][axisX+1]) > -1 ^ (this.blockData[axisY][axisX-1] > -1)}`);
-                this.debugLogging(this.simulationCrashCheck(-1, -1));
-                if(this.simulationBlock.rotate === 2 &&
-                        ((this.blockData[axisY][axisX+1]) > -1 ^
-                        (this.blockData[axisY][axisX-1] > -1)) &&
-                        !this.simulationCrashCheck(-1, -1)) {
-                            this.debugLogging('dddddddddddddddddddddd');
-                    this.simulationPossible(-1, -1);
-                }
-                if(!this.simulationCrashCheck(-1, 0)) {
-                    this.simulationPossible(-1, 0);
-                    break;
+                if(this.simulationBlock.rotate === 2) {
+                    if(this.blockData[axisY][axisX-1] > -1) {
+                        if(this.blockData[axisY-1][axisX-1] > -1 &&
+                                !this.simulationCrashCheck(1, 0)) {
+                            this.simulationPossible(1, 0);
+                            break;
+                        }
+                        if(!this.simulationCrashCheck(-1, -1)) {
+                            this.simulationPossible(-1, -1);
+                            break;
+                        }     
+                    }
+                    if(((this.blockData[axisY][axisX+1]) > -1 ^
+                            (this.blockData[axisY][axisX-1] > -1)) &&
+                            !this.simulationCrashCheck(-1, -1)) {
+                        this.simulationPossible(-1, -1);
+                        break;
+                    }
+                    if(!this.simulationCrashCheck(-1, 0)) {
+                        this.simulationPossible(-1, 0);
+                        break;
+                    }
                 }
         }
     }

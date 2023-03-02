@@ -69,7 +69,7 @@ export default class Tetris {
                 this.debugLogging('down');
             }
             document.querySelector('.score').innerHTML = (this.score+'').padStart(8, '0');
-        }, 66);
+        }, 70);
         //controller - toggle
         setInterval(() => {
             if(!this.progressStatus) return;
@@ -680,7 +680,7 @@ export default class Tetris {
                     }
                     break;
                 case 3:
-                    if(this.blockData[this.simulationY+this.simulationBlock.axis[0]+1][this.simulationX+this.simulationBlock.axis[1]+1] > -1) {
+                    if(this.blockData[axisY+1][axisX+1] > -1) {
                         if(!this.simulationCrashCheck(1, -2)) {
                             this.simulationPossible(1, -2);
                             this.simulationSpecialStatus = true;
@@ -984,43 +984,101 @@ export default class Tetris {
         let axisX = this.currBlockX+this.currBlock.axis[1];
         let axisY = this.currBlockY+this.currBlock.axis[0];
         switch(this.currBlock.rotate) {
-            case 0: case 2:
-                if(!this.simulationCrashCheck(0, 1)) {
-                    this.simulationPossible(0, 1);
+            case 0:
+                if(axisY-1 < 0 &&
+                        !this.simulationCrashCheck(0, 2)) {
+                    this.simulationPossible(0, 2);
                     break;
                 }
-                if(!this.simulationCrashCheck(0, 2)) {
+                if(axisY-2 < 0 &&
+                        !this.simulationCrashCheck(0, 1)) {
                     this.simulationPossible(0, 1);
                     break;
                 }
                 break;
             case 1:
-                if(!this.simulationCrashCheck(1, 0)) {
-                    this.simulationPossible(0, 1);
+                if(this.simulationBlock.rotate === 0) {
+                    if(axisX-3 >= 0 &&
+                            (this.blockData[axisY][axisX-3] > -1 ||
+                            this.blockData[axisY][axisX-2] > -1 ||
+                            this.blockData[axisY][axisX-1] > -1) &&
+                            !this.simulationCrashCheck(-1, -2)) {
+                        this.simulationPossible(-1, -2);
+                        break;
+                    }
+                }
+                if(this.simulationBlock.rotate === 2) {
+                    if(axisX+3 <= 9 &&
+                            (this.blockData[axisY][axisX+3] > -1 ||
+                            this.blockData[axisY][axisX+2] > -1 ||
+                            this.blockData[axisY][axisX+1] > -1) &&
+                            !this.simulationCrashCheck(1, -1)) {
+                        this.simulationPossible(1, -1);
+                        break;
+                    }
+                }
+                if(axisX-1 < 0 &&
+                        !this.simulationCrashCheck(2, 0)) {
+                    this.simulationPossible(2, 0);
                     break;
                 }
-                if(!this.simulationCrashCheck(2, 0)) {
-                    this.simulationPossible(0, 2);
+                if(axisX-2 < 0 &&
+                        !this.simulationCrashCheck(1, 0)) {
+                    this.simulationPossible(1, 0);
                     break;
                 }
-                if(!this.simulationCrashCheck(-1, 0)) {
+                if(axisX+1 > 0 &&
+                        !this.simulationCrashCheck(-1, 0)) {
                     this.simulationPossible(-1, 0);
                     break;
                 }
                 break;
+            case 2:
+                if(axisY-1 < 0 &&
+                        !this.simulationCrashCheck(0, 1)) {
+                    this.simulationPossible(0, 1);
+                    break;
+                }
+                break;
             case 3:
-                if(!this.simulationCrashCheck(-1, 0)) {
-                    this.simulationPossible(-1, 0);
-                    break;
+                if(this.simulationBlock.rotate === 2) {
+                    if(axisX-3 >= 0 &&
+                            axisY-1 >= 0 &&
+                            (this.blockData[axisY-1][axisX-3] > -1 ||
+                            this.blockData[axisY-1][axisX-2] > -1 ||
+                            this.blockData[axisY-1][axisX-1] > -1) &&
+                            !this.simulationCrashCheck(-2, -1)) {
+                        this.simulationPossible(-2, -1);
+                        break;
+                    }
                 }
-                if(!this.simulationCrashCheck(-2, 0)) {
-                    this.simulationPossible(-2, 0);
-                    break;
+                if(this.simulationBlock.rotate === 0) {
+                    if(axisX+3 <= 9 &&
+                            axisY-1 >= 0 &&
+                            (this.blockData[axisY-1][axisX+3] > -1 ||
+                            this.blockData[axisY-1][axisX+2] > -1 ||
+                            this.blockData[axisY-1][axisX+1] > -1) &&
+                            !this.simulationCrashCheck(2, -2)) {
+                        this.simulationPossible(2, -2);
+                        break;
+                    }
                 }
-                if(!this.simulationCrashCheck(1, 0)) {
+                if(axisX-1 < 0 &&
+                        !this.simulationCrashCheck(1, 0)) {
                     this.simulationPossible(1, 0);
                     break;
                 }
+                if(axisX+1 > 0 &&
+                        !this.simulationCrashCheck(-2, 0)) {
+                    this.simulationPossible(-2, 0);
+                    break;
+                }
+                if(axisX+2 < 0 &&
+                        !this.simulationCrashCheck(-1, 0)) {
+                    this.simulationPossible(-1, 0);
+                    break;
+                }
+                break;
         }
     }
 

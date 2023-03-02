@@ -672,6 +672,7 @@ export default class Tetris {
                             this.simulationPossible(-1, -2);
                             this.simulationSpecialStatus = true;
                             this.specialScore = 'tspin';
+                            return;
                         }
                     }
                     break;
@@ -681,11 +682,11 @@ export default class Tetris {
                             this.simulationPossible(1, -2);
                             this.simulationSpecialStatus = true;
                             this.specialScore = 'tspin';
+                            return;
                         }
                     }
                     break;
             }
-            return;
         }
         //mini
         switch(this.currBlock.rotate) {
@@ -694,9 +695,9 @@ export default class Tetris {
                     case 1 :
                         if(axisY-1 >= 0 && 
                                 this.blockData[axisY-1][axisX-1] === -1) {
-                            if(axisX-2 < 0 || (
-                                    this.blockData[axisY][axisX-2] > -1 &&
-                                    this.blockData[axisY-1][axisX] > -1) &&
+                            if((axisX-2 < 0 || 
+                                    this.blockData[axisY][axisX-2] > -1) &&
+                                    this.blockData[axisY-1][axisX] > -1 &&
                                     !this.simulationCrashCheck(-1, 0)) {
                                 this.simulationPossible(-1, 0);
                                 if(axisX-2 < 0 || this.blockData[axisY+1][axisX-2] > -1) {
@@ -720,9 +721,9 @@ export default class Tetris {
                     case 3 :
                         if(axisY-1 >= 0 && 
                                 this.blockData[axisY-1][axisX+1] === -1) {
-                            if(axisX+2 > 9 || (
-                                    this.blockData[axisY][axisX+2] > -1 &&
-                                    this.blockData[axisY-1][axisX] > -1) &&
+                            if((axisX+2 > 9 || 
+                                    this.blockData[axisY][axisX+2] > -1) &&
+                                    this.blockData[axisY-1][axisX] > -1 &&
                                     !this.simulationCrashCheck(1, 0)) {
                                 this.simulationPossible(1, 0);
                                 if(axisX+2 > 9 || this.blockData[axisY+1][axisX+2] > -1) {

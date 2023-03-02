@@ -469,10 +469,6 @@ export default class Tetris {
         });
         if(crashCheck) return;
 
-        if(this.currBlock.type === 1 || this.currBlock.type === 2) {
-            this.currBlock.rotate = 2;
-        }
-
         this.renderCurrBlock();
         if(!isHoldback) this.createNextBlock();
     }
